@@ -281,7 +281,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 30cb43df52b998b459fd3073df5d09d3, type: 2}
+  - {fileID: 2100000, guid: 42082c2313294c3418a23c9bd43dbe49, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -715,7 +715,7 @@ GameObject:
   - component: {fileID: 7704500299173628239}
   - component: {fileID: 8737159980497637830}
   m_Layer: 0
-  m_Name: Legger
+  m_Name: Red Legger
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

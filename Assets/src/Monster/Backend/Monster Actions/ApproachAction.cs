@@ -21,12 +21,15 @@ public class ApproachAction : MAction{
     
     public override void DoAction()
     {
+        self.body.SetMoveSpeed(1);
+        self.appetites[(int)MONMOV.BOREDOM].Restore(1 - self.affinity.sloth);
+    }
+    protected override void StartAction()
+    { 
         Vector3 direction = approachPoint - self.body.tform.position;
         direction.y = 0;
         direction = direction.normalized;
         self.body.SetFaceDirection(direction);
-        self.body.SetMoveSpeed(1);
-        self.appetites[(int)MONMOV.BOREDOM].Restore(1 - self.affinity.sloth);
     }
 
     public override void EndAction()

@@ -40,22 +40,10 @@ public class Monsters : MonoBehaviour
                                             (UnityEngine.Random.Range(0,monsters.wanderSize.z*2)-monsters.wanderSize.z));
     }
 
-    public static MAction BuildAction(Monster m, MONMOV reason){
-        switch(reason){
-            case MONMOV.NONE:
-                return null;
-            break;
-            case MONMOV.BOREDOM:
-                return BuildBoredomAction(m);
-            break;
-        }
-        return null;
-    }
+    
 
-    static MAction BuildBoredomAction(Monster m){
-        Vector3 wanderpt = GetWanderPoint();
-        Instantiate(monsters.marker, wanderpt,Quaternion.identity);
-        return new ApproachAction(m, MONMOV.BOREDOM,wanderpt);
+    static MAction BuildHungerAction(Monster m){
+        return null;
     }
 
     public static bool pause = false;
@@ -85,4 +73,6 @@ public class Monsters : MonoBehaviour
                 m.Update();
             }
     }
+
+    
 }

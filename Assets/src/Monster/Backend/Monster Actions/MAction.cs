@@ -9,11 +9,20 @@ public abstract class MAction {
     public Monster self {get; set;}
     public MONMOV reason {get; protected set;}
 
-
+    public bool init {get; protected set;}
     public abstract bool EndCondition();
+
+    protected abstract void StartAction();
     public abstract void DoAction();
 
     public abstract void EndAction();
+
+    public void InitAction(){
+        if(!init){
+            init=true;
+            StartAction();
+        }
+    }
 
     public void AddToEnd(MAction action){
         if(next==null)
