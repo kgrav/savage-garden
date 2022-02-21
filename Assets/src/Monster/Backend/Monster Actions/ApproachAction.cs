@@ -4,7 +4,7 @@ using System;
 public class ApproachAction : MAction{
     public Vector3 approachPoint {get; private set;}
 
-    public ApproachAction(Monster self, MONMOV reason, Vector3 approachPoint){
+    public ApproachAction(Monster self, MONAPP reason, Vector3 approachPoint){
         
         next=null;
         this.self=self;
@@ -22,7 +22,7 @@ public class ApproachAction : MAction{
     public override void DoAction()
     {
         self.body.SetMoveSpeed(1);
-        self.appetites[(int)MONMOV.BOREDOM].Restore(0.5f*Time.deltaTime);
+        self.appetites[(int)MONAPP.BOREDOM].Restore(0.5f*Time.deltaTime);
     }
     protected override void StartAction()
     { 

@@ -11,7 +11,7 @@ public class MonsterAppetite {
 
     public float priority {get; private set;}
 
-    public MONMOV movKey {get; private set;}
+    public MONAPP movKey {get; private set;}
 
     public float pctValue {get{
         return value/max;
@@ -33,7 +33,7 @@ public class MonsterAppetite {
         }
     }
 
-    public MonsterAppetite(MONMOV movKey, float lowPercent, float highPercent, float value, float max, float decreaseRate, float priority){
+    public MonsterAppetite(MONAPP movKey, float lowPercent, float highPercent, float value, float max, float decreaseRate, float priority){
         this.lowPercent=lowPercent;
         this.highPercent=highPercent;
         this.value=value;
@@ -50,6 +50,10 @@ public class MonsterAppetite {
         this.decreaseRate=preset.decreaseRate;
         this.priority=priority;
         this.movKey=preset.movKey;
+    }
+
+    public AppetiteBarData GetDisplayData(){
+        return new AppetiteBarData(lowPercent, highPercent, value, movKey);
     }
 
     public bool pause = false;

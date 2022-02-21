@@ -3,7 +3,7 @@ using System;
 
 public class MPAccessAction : MAction {
     public MonsterPoint goalPoint {get; private set;}
-    public MPAccessAction(Monster self, MonsterPoint goalPoint, MONMOV reason){
+    public MPAccessAction(Monster self, MonsterPoint goalPoint, MONAPP reason){
         this.self=self;
         this.goalPoint=goalPoint;
         this.reason=reason;

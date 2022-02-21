@@ -8,7 +8,7 @@ public abstract class MAction {
 
     public MAction next {get; set;}
     public Monster self {get; set;}
-    public MONMOV reason {get; protected set;}
+    public MONAPP reason {get; protected set;}
 
     public bool init {get; protected set;}
     public abstract bool EndCondition();

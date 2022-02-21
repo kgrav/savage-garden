@@ -16,7 +16,7 @@ public class MonsterBody : NVComponent
     public MonsterLeg[] legs=>GetComponentsInChildren<MonsterLeg>();
     
     public float maxVelocity;
-
+    public int HP;
     public bool actionMsg;
     public bool appetitesMsg;
     public bool motiveOrderMsg;

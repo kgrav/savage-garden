@@ -17,6 +17,14 @@ public class Monsters : MonoBehaviour
     }
     return _monsterList;
     }}
+    public static List<AffinityData> GetAffinityData(int index){
+        return GetMonster(index).GetAffinityData();
+    }
+
+    public static List<AppetiteBarData> GetAppetiteData(int index){
+        return GetMonster(index).GetAppetiteData();
+    }
+
 
     public GameObject marker;
     public static Monster GetMonster(int indx){

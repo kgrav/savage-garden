@@ -17,7 +17,7 @@ public class MonsterPoint : NVComponent {
 
     
 
-    public Dictionary<MONMOV,MPResource> apps;
+    public Dictionary<MONAPP,MPResource> apps;
 
     public int maxCapacity;
 
@@ -44,7 +44,7 @@ public class MonsterPoint : NVComponent {
         }
         _occupants = new List<int>();
         mpindex = points.Count;
-        apps = new Dictionary<MONMOV, MPResource>();
+        apps = new Dictionary<MONAPP, MPResource>();
         mindex = body ? body.monsterKey : -1;
         foreach(MPResource mpr in resources){
             apps.Add(mpr.key, mpr);
@@ -67,7 +67,7 @@ public class MonsterPoint : NVComponent {
 
     
 
-    public MPSTATE Availability(MONMOV accessType){
+    public MPSTATE Availability(MONAPP accessType){
         if(!_active)
             return MPSTATE.INACTIVE;
         if(!apps.ContainsKey(accessType) || apps[accessType].totalAmount < 0)
@@ -77,7 +77,7 @@ public class MonsterPoint : NVComponent {
         return MPSTATE.AVAILABLE;
     }
 
-    public void Engage(Monster m, MONMOV goal){
+    public void Engage(Monster m, MONAPP goal){
         print("engage from " + m.index + "; " + goal);
         if(!occupants.Contains(m.index))
             occupants.Add(m.index);
@@ -86,7 +86,7 @@ public class MonsterPoint : NVComponent {
 
 
 
-    public void Access(Monster m, MONMOV goal){
+    public void Access(Monster m, MONAPP goal){
         OnAccess(m, goal);
         m.RestoreAppetite(goal, apps[goal].accessRate*Time.deltaTime);
         if(apps[goal].finite){
@@ -101,7 +101,7 @@ public class MonsterPoint : NVComponent {
         }
     }
 
-    public virtual void OnAccess(Monster m, MONMOV goal){
+    public virtual void OnAccess(Monster m, MONAPP goal){
         
     }
 
@@ -126,7 +126,7 @@ public class MonsterPoint : NVComponent {
 
     [Serializable]
     public class MPResource{
-        public MONMOV key;
+        public MONAPP key;
         public float quality;
         public float accessRate;
         public bool finite;
