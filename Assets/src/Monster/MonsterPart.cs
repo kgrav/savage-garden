@@ -6,8 +6,10 @@ public class MonsterPart : NVComponent{
     public Animator anim=>GetComponent<Animator>();
 
     void Awake(){
-        foreach(NVAnimationState a in anim.GetBehaviours<NVAnimationState>()){
-            a.SetRoot(this);
+        if(anim){
+            foreach(NVAnimationState a in anim.GetBehaviours<NVAnimationState>()){
+                a.SetRoot(this);
+            }
         }
         Init();
     }

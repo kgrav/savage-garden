@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MonsterBody : NVComponent
 {
-    int monsterKey;
+    public int monsterKey {get; private set;}
 
     public MonsterSense sense =>GetComponentInChildren<MonsterSense>();
 
@@ -16,6 +16,10 @@ public class MonsterBody : NVComponent
     public MonsterLeg[] legs=>GetComponentsInChildren<MonsterLeg>();
     
     public float maxVelocity;
+
+    public bool actionMsg;
+    public bool appetitesMsg;
+    public bool motiveOrderMsg;
 
     Vector3 ClampedVelocity(Vector3 velocity){
         float vmag = velocity.magnitude;

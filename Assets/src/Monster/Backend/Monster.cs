@@ -6,30 +6,75 @@ public enum MONMOV{NONE=-1,BOREDOM=0,HUNGER=1,LONELY=2,HORNY=3}
 public enum MONSTATE{NONE=0,ACTION=1}
 public class Monster {
 
-    MAction BuildAction(Monster m, MONMOV reason){
-        switch(reason){
-            case MONMOV.NONE:
-                return null;
-            break;
-            case MONMOV.BOREDOM:
-                return BuildBoredomAction();
-            break;
-            case MONMOV.HUNGER:
-                return BuildHungerAction();
+    
+
+    MAction BuildAction(Monster m, List<int> orderedAppetites){
+        MAction r = null;
+        for(int i = 0; i < orderedAppetites.Count; ++i){
+            if(r!=null)
+                break;
+            switch((MONMOV)orderedAppetites[i]){
+                case MONMOV.NONE:
+                    r = null;
+                break;
+                case MONMOV.BOREDOM:
+                    r = BuildBoredomAction();
+                break;
+                case MONMOV.HUNGER:
+                    r = BuildHungerAction();
+                break;
+            }
         }
-        return null;
+        return r==null ? BuildWanderAction() : r;
     }
 
     MAction BuildBoredomAction(){
+        return BuildWanderAction();
+    }
+
+    MAction BuildWanderAction(){
         Vector3 wanderpt = Monsters.GetWanderPoint();
-        GameObject.Instantiate(Monsters.monsters.marker, wanderpt,Quaternion.identity);
         return new ApproachAction(this, MONMOV.BOREDOM,wanderpt);
     }
 
     MAction BuildHungerAction(){
-        List<MonsterPoint> options = new List<MonsterPoint>();
-        return null;
+        MAction r = null;
+        MonsterPoint bestPoint = GetBestMonsterPoint(MONMOV.HUNGER);
+        if(bestPoint!=null){
+            r = new ApproachAction(this,MONMOV.HUNGER,bestPoint.tform.position);
+        GameObject.Instantiate(Monsters.monsters.marker, bestPoint.tform.position + Vector3.right,Quaternion.identity);
+            r.AddToEnd(new MPAccessAction(this, bestPoint, MONMOV.HUNGER));
+        }
+        return r;
     }
+
+
+    public MonsterPoint GetBestMonsterPoint(MONMOV goal){
+        mpvec best = new mpvec(null,float.MaxValue);
+        foreach(MonsterPoint mp in body.sense.GetPoints()){
+            if(MPSTATE.AVAILABLE == mp.Availability(goal)){
+                float pdistance = Vector3.Distance(body.tform.position, mp.tform.position);
+                float qdist = mp.apps[goal].quality*Monsters.QualityScale;
+                float prefDist = Vector2.Distance(Vector2.zero, new Vector2(pdistance,qdist));
+                if(best.pt==null || prefDist < best.prefDist)
+                    best=new mpvec(mp, prefDist);
+            }
+        }   
+        Monsters.print(best.pt);
+        return best.pt;
+    }
+
+    class mpvec{
+        public MonsterPoint pt;
+        public float prefDist;
+
+        public mpvec(MonsterPoint pt, float prefDist){
+            this.pt=pt;
+            this.prefDist=prefDist;
+        }
+    }
+
+
 
 
 
@@ -58,11 +103,12 @@ public class Monster {
     public Monster(MonsterPreset preset, int index){
         this.index=index;
         affinity = preset.affinity;
-        appetites = new MonsterAppetite[1];
-        appetites[(int)MONMOV.BOREDOM] = new MonsterAppetite(preset.boredom, preset.affinity.sloth);
+        appetites = new MonsterAppetite[2];
+        appetites[(int)MONMOV.BOREDOM] = new MonsterAppetite(preset.boredom, 20-preset.affinity.sloth);
+        appetites[(int)MONMOV.HUNGER] = new MonsterAppetite(preset.hunger,20-preset.affinity.gluttony);
         body=GameObject.Instantiate(preset.bodyPreset, Monsters.GetWanderPoint(), Quaternion.identity).GetComponent<MonsterBody>();
         body.Setup(this);
-        rtime=Monsters.rtime;
+        rtime=0.1f;
         appetitesView=new List<MonsterAppetite>();
     }
 
@@ -71,7 +117,7 @@ public class Monster {
     List<int> orderMotives(){
             List<MonsterAppetite> e1 = new List<MonsterAppetite>();
             foreach(MonsterAppetite a in appetites){
-                if(a.low){
+                if(a.low && !e1.Contains(a)){
                     e1.Add(a);
                 }
             }
@@ -101,9 +147,15 @@ public class Monster {
             rstep();
             rtime=Monsters.rtime;
         }
+        string appetitesMsg = "appetites: ";
         foreach(MonsterAppetite a in appetites){
+            
             a.Update();
+            appetitesMsg += a.movKey + ": " + a.value + ", ";
+            
         }
+        if(body.appetitesMsg)
+            Monsters.print(appetitesMsg);
         state=MONSTATE.NONE;
         if(action != null){
             state=MONSTATE.ACTION;
@@ -129,15 +181,35 @@ public class Monster {
         return appetites[(int)appetite].high;
     }
 
+    public void SetDecreasePause(MONMOV appetite, bool pause){
+        appetites[(int)appetite].pause=pause;
+    }
+
     //to-do: motive evaluation function
     void rstep(){
         if(state==MONSTATE.NONE){
             Monsters.print(index + ": entering rstep with state NONE");
 
             List<int> motivesView = orderMotives();
-            MONMOV newActionGoal = MONMOV.BOREDOM;
-            action = BuildAction(this,newActionGoal);
-            Monsters.print(index + ": received action of type " + action.GetType());
+            string chainmsg = index + ": low appetites: ";
+            foreach(int i in motivesView){
+                chainmsg += (MONMOV)i + ", ";
+            }
+            if(body.motiveOrderMsg)
+            Monsters.print(chainmsg);
+            action = BuildAction(this,motivesView);
+            if(action!=null){
+                chainmsg = index + ": received action of type " + action.GetType();
+                MAction a1 =action.next;
+                while(a1!= null){
+                    chainmsg += "=> " + a1.GetType();
+                    a1=a1.next;
+                }
+                if(body.actionMsg)
+                Monsters.print(chainmsg);
+            }
+            else
+            {Monsters.print("could not build action");}
         }
     }
 
@@ -145,7 +217,7 @@ public class Monster {
     //access types:
     //BOREDOM - trying to socialize
     //HUNGER - trying to eat alive
-    public void OnMPEngage(MONMOV accessType, Monster accessor){
+    public void OnMPAccess(MONMOV accessType, Monster accessor){
         
     }
 }

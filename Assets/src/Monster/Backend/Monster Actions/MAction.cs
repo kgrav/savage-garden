@@ -2,7 +2,8 @@ using UnityEngine;
 using System;
 
 
-
+public enum MACT {APPROACH,FACE,MPACCESS}
+public enum MTAG {ALIVE}
 public abstract class MAction {
 
     public MAction next {get; set;}

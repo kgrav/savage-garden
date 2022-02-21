@@ -4,9 +4,11 @@ using System.Collections.Generic;
 
 public class Monsters : MonoBehaviour
 {
+
+    
     public static Monsters monsters=>FindObjectOfType<Monsters>();
 
-
+    
     static bool listInit = false;
     static List<Monster> _monsterList;
     static List<Monster> monsterList {get{if(!listInit){
@@ -21,17 +23,15 @@ public class Monsters : MonoBehaviour
         return monsterList[indx];
     }
 
+    public static void DeleteMonster(int i){
+
+    }
+
     public bool roll(int modifier, int check){
         return UnityEngine.Random.Range(1,21)+modifier > check;
     }
 
-    public static Vector3 xzdir(Vector3 a, Vector3 b){
-        Vector3 a1 = a;
-        a1.y=0;
-        Vector3 b1 = b;
-        b1.y=0;
-        return b1-a1;
-    }
+    
     public static float actionUpdateInterval {get{return 1/monsters.actionUpdatesPerSecond;}}
     
     public static Vector3 GetWanderPoint(){
@@ -41,7 +41,7 @@ public class Monsters : MonoBehaviour
     }
 
     
-
+    public static float QualityScale;
     static MAction BuildHungerAction(Monster m){
         return null;
     }
@@ -57,6 +57,8 @@ public class Monsters : MonoBehaviour
         }
     }
 
+
+    public float qualityScale;
     public float actionUpdatesPerSecond;
 
     public MonsterPreset[] presets;

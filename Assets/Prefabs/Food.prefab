@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4373511775647776405}
   - component: {fileID: 7530658091145166130}
   - component: {fileID: 2997175600620419897}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Food
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -127,13 +127,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   capacity: 0
-  motives:
-    fullness: 0
-    physicalEnergy: 0
-    socialEnergy: 0
-    sexEnergy: 0
-    bathroom: 0
-    boredom: 0
-  maxCapacity: 0
-  startActive: 0
+  resources:
+  - key: 1
+    quality: 0
+    accessRate: 0.1
+    finite: 1
+    totalAmount: 3
+    destroyWhenExhausted: 1
+  maxCapacity: 1
+  startActive: 1
   isMonster: 0

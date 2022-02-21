@@ -16,6 +16,8 @@ public class MPAccessAction : MAction {
 
     public override void EndAction()
     {
+        self.SetDecreasePause(reason,false);
+        if(goalPoint)
         goalPoint.Disengage(self);
     }
 
@@ -25,14 +27,15 @@ public class MPAccessAction : MAction {
             return true;
         MPSTATE accessCode = goalPoint.Availability(reason);
         bool end = false;
-        end |= Vector3.Distance(goalPoint.tform.position, self.body.tform.position) > 10;
+        end |= MathUtils.xzdist(goalPoint.tform.position, self.body.tform.position) > 10;
         end |= self.AppetiteIsHigh(reason);
-        end |= accessCode == MPSTATE.AVAILABLE || accessCode==MPSTATE.BADTYPE;
-        return false;
+        end |= accessCode == MPSTATE.INACTIVE || accessCode==MPSTATE.BADTYPE;
+        return end;
     }
 
     protected override void StartAction()
     {
+        self.SetDecreasePause(reason,true);
         goalPoint.Engage(self, reason);
     }
 }

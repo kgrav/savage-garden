@@ -14,7 +14,7 @@ public class ApproachAction : MAction{
 
     public override bool EndCondition()
     {
-        float dist = Vector3.Distance(self.body.tform.position, approachPoint);
+        float dist = MathUtils.xzdist(self.body.tform.position, approachPoint);
         return dist < 10 || !self.body.hasLegs;
     }
 
@@ -22,7 +22,7 @@ public class ApproachAction : MAction{
     public override void DoAction()
     {
         self.body.SetMoveSpeed(1);
-        self.appetites[(int)MONMOV.BOREDOM].Restore(1 - self.affinity.sloth);
+        self.appetites[(int)MONMOV.BOREDOM].Restore(0.5f*Time.deltaTime);
     }
     protected override void StartAction()
     { 

@@ -9,12 +9,13 @@ public class MonsterPoint : NVComponent {
     public static List<MonsterPoint> points=null;
     public int capacity;
 
-    public Motives motives;
 
     protected List<int> _occupants;
     public List<int> occupants {get{return _occupants;}}
 
     public MPResource[] resources;
+
+    
 
     public Dictionary<MONMOV,MPResource> apps;
 
@@ -27,7 +28,7 @@ public class MonsterPoint : NVComponent {
     protected int[] lastIndx;
 
     protected bool _active;
-
+    MonsterBody body=>GetComponent<MonsterBody>();
     public bool startActive;
     public bool isMonster;
     public bool active {get{return _active;}}
@@ -44,11 +45,15 @@ public class MonsterPoint : NVComponent {
         _occupants = new List<int>();
         mpindex = points.Count;
         apps = new Dictionary<MONMOV, MPResource>();
+        mindex = body ? body.monsterKey : -1;
         foreach(MPResource mpr in resources){
             apps.Add(mpr.key, mpr);
         }
+        
         int dind = points.Count;
         points.Add(this);
+        if(startActive)
+            Activate();
     }
 
     protected override void NVUpdate()
@@ -73,6 +78,7 @@ public class MonsterPoint : NVComponent {
     }
 
     public void Engage(Monster m, MONMOV goal){
+        print("engage from " + m.index + "; " + goal);
         if(!occupants.Contains(m.index))
             occupants.Add(m.index);
         m.SetCallback(this);
@@ -81,7 +87,33 @@ public class MonsterPoint : NVComponent {
 
 
     public void Access(Monster m, MONMOV goal){
+        OnAccess(m, goal);
+        m.RestoreAppetite(goal, apps[goal].accessRate*Time.deltaTime);
+        if(apps[goal].finite){
+            apps[goal].totalAmount -= apps[goal].accessRate*Time.deltaTime;
+            if(apps[goal].totalAmount <= 0 && apps[goal].destroyWhenExhausted){
+                MPDestroy();
+                return;
+            }
+        }
+        if(mindex > -1){
+            Monsters.GetMonster(mindex).OnMPAccess(goal, m);
+        }
+    }
+
+    public virtual void OnAccess(Monster m, MONMOV goal){
         
+    }
+
+    void MPDestroy(){
+        if(mindex > -1)
+        {
+            Monsters.DeleteMonster(mindex);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
     public void Disengage(Monster m){
         if(occupants.Contains(m.index))
@@ -95,10 +127,10 @@ public class MonsterPoint : NVComponent {
     [Serializable]
     public class MPResource{
         public MONMOV key;
-        public float restoreRate;
         public float quality;
         public float accessRate;
         public bool finite;
         public float totalAmount;
+        public bool destroyWhenExhausted;
     }
 }

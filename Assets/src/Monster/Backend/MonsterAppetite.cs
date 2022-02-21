@@ -49,7 +49,10 @@ public class MonsterAppetite {
         this.max=preset.max;
         this.decreaseRate=preset.decreaseRate;
         this.priority=priority;
+        this.movKey=preset.movKey;
     }
+
+    public bool pause = false;
 
     public void Restore(float f){
         if(value < 0){
@@ -59,6 +62,7 @@ public class MonsterAppetite {
     }
 
     public void Update(){
+        if(!pause)
         value -= decreaseRate*Time.deltaTime;
     }
 }
