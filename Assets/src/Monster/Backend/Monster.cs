@@ -2,8 +2,8 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-public enum MONAPP{NONE=-1,BOREDOM=0,HUNGER=1,LONELY=2,HORNY=3}
-public enum MONSTATE{NONE=0,ACTION=1}
+public enum MONAPP{NONE=-1,BOREDOM=0,HUNGER=1,STAMINA=2,LONELY=3,HORNY=4}
+public enum MONSTATE{NONE=0,ACTION=1,DEAD=2}
 public class Monster {
 
     
@@ -34,33 +34,71 @@ public class Monster {
 
     MAction BuildWanderAction(){
         Vector3 wanderpt = Monsters.GetWanderPoint();
-        return new ApproachAction(this, MONAPP.BOREDOM,wanderpt);
+        return new ApproachAction(this, MONAPP.BOREDOM,wanderpt,100);
     }
 
     MAction BuildHungerAction(){
         MAction r = null;
-        MonsterPoint bestPoint = GetBestMonsterPoint(MONAPP.HUNGER);
-        if(bestPoint!=null){
-            r = new ApproachAction(this,MONAPP.HUNGER,bestPoint.tform.position);
-            r.AddToEnd(new MPAccessAction(this, bestPoint, MONAPP.HUNGER));
+        mpvec bestPoint = GetBestMonsterPoint(MONAPP.HUNGER);
+        if(bestPoint.pt!=null){
+            r = new GotoMPAction(this,MONAPP.HUNGER,bestPoint.pt,bestPoint.prefDist);
+            if(bestPoint.pt.state == MONSTATE.DEAD){
+                
+                r.AddToEnd(new MPAccessAction(this, bestPoint.pt, MONAPP.HUNGER,bestPoint.prefDist));
+            }
+            else
+            {
+                MonsterPart attackpart = body.GetBestAttack();
+                if(body.actionMsg)
+                    Monsters.print(index + ": " + "attacking with" + attackpart);
+                if(attackpart){
+                    r.AddToEnd(new AttackAction(bestPoint.pt, attackpart,bestPoint.prefDist,MONAPP.HUNGER, this));
+                }
+            }
         }
         return r;
     }
 
 
-    public MonsterPoint GetBestMonsterPoint(MONAPP goal){
+
+
+    mpvec GetBestMonsterPoint(MONAPP goal){
         mpvec best = new mpvec(null,float.MaxValue);
+        float qualityThreshold = (20-affinity.pride);
         foreach(MonsterPoint mp in body.sense.GetPoints()){
-            if(MPSTATE.AVAILABLE == mp.Availability(goal)){
+            if(MPSTATE.AVAILABLE == mp.Availability(goal) && mp.mindex != index){
                 float pdistance = Vector3.Distance(body.tform.position, mp.tform.position);
+                float quality = GetQuality(mp,goal);
+                if(body.actionMsg)
+                Monsters.print(index + ": " + mp.mindex + " quality: " + quality + " threshold: " + (qualityThreshold + appetites[(int)goal].criticality));
+                if(quality < qualityThreshold + appetites[(int)goal].criticality){
                 float qdist = mp.apps[goal].quality*Monsters.QualityScale;
                 float prefDist = Vector2.Distance(Vector2.zero, new Vector2(pdistance,qdist));
                 if(best.pt==null || prefDist < best.prefDist)
                     best=new mpvec(mp, prefDist);
+                }
             }
-        }   
-        Monsters.print(best.pt);
-        return best.pt;
+        }
+        return best;
+    }
+
+
+    public float GetQuality(MonsterPoint mp,MONAPP goal){
+        float r = mp.apps[goal].quality;
+        switch(goal){
+            case MONAPP.HUNGER:
+                r=GetHungerQuality(mp);
+            break;
+        }
+        return r;
+    }
+
+    float GetHungerQuality(MonsterPoint mp){
+        float r = mp.apps[MONAPP.HUNGER].quality;
+        r+= mp.state == MONSTATE.DEAD ? 0 : (20-affinity.sloth)/20;
+        r+= mp.affinity.wrath < affinity.wrath ? 0 : (20-affinity.pride)/20;
+        r+= mp.getHP;
+        return r;
     }
 
     class mpvec{
@@ -103,6 +141,7 @@ public class Monster {
 
     public bool alive;
 
+
     public MONSTATE state {get;private set;}
 
     float rtime;
@@ -116,15 +155,25 @@ public class Monster {
     public Monster(MonsterPreset preset, int index){
         this.index=index;
         affinity = preset.affinity;
-        appetites = new MonsterAppetite[2];
+        appetites = new MonsterAppetite[3];
         appetites[(int)MONAPP.BOREDOM] = new MonsterAppetite(preset.boredom, 20-preset.affinity.sloth);
         appetites[(int)MONAPP.HUNGER] = new MonsterAppetite(preset.hunger,20-preset.affinity.gluttony);
+        appetites[(int)MONAPP.STAMINA] = new MonsterAppetite(preset.stamina,20);
         body=GameObject.Instantiate(preset.bodyPreset, Monsters.GetWanderPoint(), Quaternion.identity).GetComponent<MonsterBody>();
         body.Setup(this);
         rtime=0.1f;
         appetitesView=new List<MonsterAppetite>();
     }
 
+    public void KillMonster(string reason){
+        Monsters.print(index + " is kill. " + reason);
+        if(action!=null){
+            action.EndAction();
+            action=null;
+        }
+        state=MONSTATE.DEAD;
+        body.tform.LookAt(Vector3.up,body.tform.forward);
+    }
     
 
     List<int> orderMotives(){
@@ -143,9 +192,9 @@ public class Monster {
             MonsterAppetite highest = null;
             float maxPriority = float.MinValue;
             foreach(MonsterAppetite a in total){
-                if(a.priority > maxPriority){
+                if(a.priority + a.criticality > maxPriority){
                     highest = a;
-                    maxPriority = a.priority;
+                    maxPriority = a.priority + a.criticality;
                 }
             }
             running.Add((int)highest.movKey);
@@ -155,6 +204,7 @@ public class Monster {
 
 
     public void Update(){ 
+        if(state!=MONSTATE.DEAD){
         rtime -= Time.deltaTime;
         if(rtime <= 0){
             rstep();
@@ -165,23 +215,26 @@ public class Monster {
             
             a.Update();
             appetitesMsg += a.movKey + ": " + a.value + ", ";
-            
+            if(a.criticality > Monsters.monsters.criticalityDeathThreshold){
+                KillMonster("died of " + a.movKey);
+            }   
         }
-        if(body.appetitesMsg)
-            Monsters.print(appetitesMsg);
-        state=MONSTATE.NONE;
-        if(action != null){
-            state=MONSTATE.ACTION;
-            if(action.EndCondition()){
-                action.EndAction();
-                action=action.next;
-                state=action == null ? MONSTATE.NONE : MONSTATE.ACTION;
-            }
-            else{
-                if(!action.init){
-                    action.InitAction();
+            if(body.appetitesMsg)
+                Monsters.print(appetitesMsg);
+            state=MONSTATE.NONE;
+            if(action != null){
+                state=MONSTATE.ACTION;
+                if(action.EndCondition()){
+                    action.EndAction();
+                    action=action.next;
+                    state=action == null ? MONSTATE.NONE : MONSTATE.ACTION;
                 }
-                action.DoAction();
+            else{
+                    if(!action.init){
+                        action.InitAction();
+                    }
+                    action.DoAction();
+                }
             }
         }
     }
@@ -200,9 +253,6 @@ public class Monster {
 
     //to-do: motive evaluation function
     void rstep(){
-        if(state==MONSTATE.NONE){
-            Monsters.print(index + ": entering rstep with state NONE");
-
             List<int> motivesView = orderMotives();
             string chainmsg = index + ": low appetites: ";
             foreach(int i in motivesView){
@@ -210,20 +260,29 @@ public class Monster {
             }
             if(body.motiveOrderMsg)
             Monsters.print(chainmsg);
-            action = BuildAction(this,motivesView);
-            if(action!=null){
-                chainmsg = index + ": received action of type " + action.GetType();
-                MAction a1 =action.next;
-                while(a1!= null){
-                    chainmsg += "=> " + a1.GetType();
-                    a1=a1.next;
+            MAction newAction=BuildAction(this,motivesView);
+            if(newAction != null){
+                if(action==null || (newAction.reason!=action.reason && newAction.priority < action.priority)){
+                    chainmsg = index + ": received action of type " + newAction.GetType();
+                    MAction a1 =newAction.next;
+                    while(a1!= null){
+                        chainmsg += "=> " + a1.GetType();
+                        a1=a1.next;
+                    }
+                    if(action!=null){
+                        chainmsg += ", canceling action of type " + action.GetType() + " (" + action.reason + ") ";
+                        action.EndAction();
+                    }                
+                    if(body.actionMsg)
+                    Monsters.print(chainmsg);
+                    action=newAction;
                 }
-                if(body.actionMsg)
-                Monsters.print(chainmsg);
+                else
+                {
+                    if(body.actionMsg)
+                    Monsters.print(index + " new action of type " + newAction.GetType() + " rejected.  reason match: "+ (newAction.reason!=action.reason)+" priority comparison (new < current) " + (newAction.priority < action.priority));
+                }
             }
-            else
-            {Monsters.print("could not build action");}
-        }
     }
 
 

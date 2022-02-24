@@ -3,12 +3,13 @@ using System;
 
 
 public enum MACT {APPROACH,FACE,MPACCESS}
-public enum MTAG {ALIVE}
 public abstract class MAction {
 
     public MAction next {get; set;}
     public Monster self {get; set;}
     public MONAPP reason {get; protected set;}
+
+    public float priority;
 
     public bool init {get; protected set;}
     public abstract bool EndCondition();

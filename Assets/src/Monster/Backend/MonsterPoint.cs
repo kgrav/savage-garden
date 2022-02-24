@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 
 public enum MPSTATE {INACTIVE,FULL,AVAILABLE,BADTYPE}
+
+
+public enum MPCON {ALIVE,DEAD}
 public class MonsterPoint : NVComponent {
 
     public static List<MonsterPoint> points=null;
@@ -14,23 +17,30 @@ public class MonsterPoint : NVComponent {
     public List<int> occupants {get{return _occupants;}}
 
     public MPResource[] resources;
-
     
+    public Affinity affinityConfig;
 
+    public Affinity affinity {get{return mindex > -1 ? Monsters.GetMonster(mindex).affinity : affinityConfig;}}
     public Dictionary<MONAPP,MPResource> apps;
 
     public int maxCapacity;
 
-    int mpindex;
+    public int mpindex {get; private set;}
 
-    int mindex;
+    int _mindex=-1;
+    public int mindex {get{return _mindex;}}
 
     protected int[] lastIndx;
 
     protected bool _active;
+
+    public bool alive {get; private set;}
     MonsterBody body=>GetComponent<MonsterBody>();
+    MPDamageBody dbody=>GetComponent<MPDamageBody>();
+
+
+    public int getHP{get{return dbody ? dbody.hp : 0; }}
     public bool startActive;
-    public bool isMonster;
     public bool active {get{return _active;}}
     public void Activate(){
         _active=true;
@@ -38,6 +48,17 @@ public class MonsterPoint : NVComponent {
     public void Deactivate(){
         _active=false;
     }
+
+    public MONSTATE state {
+        get{
+            return mindex > -1 ? Monsters.GetMonster(body.monsterKey).state : MONSTATE.DEAD;
+        }
+    }
+
+    public void Setup(int key){
+        _mindex = key;
+    }
+
     void Awake(){
         if(points == null){
             points = new List<MonsterPoint>();
@@ -45,7 +66,7 @@ public class MonsterPoint : NVComponent {
         _occupants = new List<int>();
         mpindex = points.Count;
         apps = new Dictionary<MONAPP, MPResource>();
-        mindex = body ? body.monsterKey : -1;
+        alive = body ? true : false;
         foreach(MPResource mpr in resources){
             apps.Add(mpr.key, mpr);
         }
@@ -54,6 +75,10 @@ public class MonsterPoint : NVComponent {
         points.Add(this);
         if(startActive)
             Activate();
+    }
+
+    public void OnTakeDamage(int amount, float impulse){
+
     }
 
     protected override void NVUpdate()
@@ -87,12 +112,12 @@ public class MonsterPoint : NVComponent {
 
 
     public void Access(Monster m, MONAPP goal){
-        OnAccess(m, goal);
+        MPTag.ResolveTags(this, m.body.monsterPoint,apps[goal].onAccess);
         m.RestoreAppetite(goal, apps[goal].accessRate*Time.deltaTime);
         if(apps[goal].finite){
             apps[goal].totalAmount -= apps[goal].accessRate*Time.deltaTime;
-            if(apps[goal].totalAmount <= 0 && apps[goal].destroyWhenExhausted){
-                MPDestroy();
+            if(apps[goal].totalAmount <= 0){
+                MPTag.ResolveTags(this, m.body.monsterPoint,apps[goal].onDeplete);
                 return;
             }
         }
@@ -102,19 +127,21 @@ public class MonsterPoint : NVComponent {
     }
 
     public virtual void OnAccess(Monster m, MONAPP goal){
-        
+        foreach(MPTag t in apps[goal].onAccess){
+            List<MonsterPoint> mps = new List<MonsterPoint>();
+            mps.Add(m.body.monsterPoint);
+            t.Resolve(this,mps);
+        }
     }
 
-    void MPDestroy(){
-        if(mindex > -1)
-        {
-            Monsters.DeleteMonster(mindex);
-        }
-        else
-        {
-            Destroy(gameObject);
+    public virtual void OnDeplete(Monster m, MONAPP goal){
+        foreach(MPTag t in apps[goal].onAccess){
+            List<MonsterPoint> mps = new List<MonsterPoint>();
+            mps.Add(m.body.monsterPoint);
+            t.Resolve(this,mps);
         }
     }
+
     public void Disengage(Monster m){
         if(occupants.Contains(m.index))
             occupants.Remove(m.index);
@@ -131,6 +158,7 @@ public class MonsterPoint : NVComponent {
         public float accessRate;
         public bool finite;
         public float totalAmount;
-        public bool destroyWhenExhausted;
+        public MPTag[] onAccess;
+        public MPTag[] onDeplete;
     }
 }

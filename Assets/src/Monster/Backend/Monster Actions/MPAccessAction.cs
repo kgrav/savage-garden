@@ -3,10 +3,11 @@ using System;
 
 public class MPAccessAction : MAction {
     public MonsterPoint goalPoint {get; private set;}
-    public MPAccessAction(Monster self, MonsterPoint goalPoint, MONAPP reason){
+    public MPAccessAction(Monster self, MonsterPoint goalPoint, MONAPP reason,float priority){
         this.self=self;
         this.goalPoint=goalPoint;
         this.reason=reason;
+        this.priority=priority;
     }
 
     public override void DoAction()

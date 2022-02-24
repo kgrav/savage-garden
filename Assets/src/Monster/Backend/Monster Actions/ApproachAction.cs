@@ -4,7 +4,7 @@ using System;
 public class ApproachAction : MAction{
     public Vector3 approachPoint {get; private set;}
 
-    public ApproachAction(Monster self, MONAPP reason, Vector3 approachPoint){
+    public ApproachAction(Monster self, MONAPP reason, Vector3 approachPoint,float priority){
         
         next=null;
         this.self=self;

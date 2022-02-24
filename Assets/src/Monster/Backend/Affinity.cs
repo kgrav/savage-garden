@@ -9,6 +9,8 @@ public class Affinity {
 
     public float gluttony;
 
+    public float pride;
+
     public float wrath;
 
 }

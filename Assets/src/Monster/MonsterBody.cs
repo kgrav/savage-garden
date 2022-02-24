@@ -10,16 +10,19 @@ public class MonsterBody : NVComponent
 
     public void Setup(Monster m){
         monsterKey = m.index;
+        monsterPoint.Setup(monsterKey);
     }
 
+
     Rigidbody rig=>GetComponent<Rigidbody>();
+    public MonsterPoint monsterPoint=>GetComponent<MonsterPoint>();
     public MonsterLeg[] legs=>GetComponentsInChildren<MonsterLeg>();
     
     public float maxVelocity;
-    public int HP;
     public bool actionMsg;
     public bool appetitesMsg;
     public bool motiveOrderMsg;
+    
 
     Vector3 ClampedVelocity(Vector3 velocity){
         float vmag = velocity.magnitude;
@@ -51,6 +54,8 @@ public class MonsterBody : NVComponent
 
     public void SetFaceDirection(Vector3 direction){
         tform.LookAt(tform.position + direction,Vector3.up);
+        float vmag = rig.velocity.magnitude;
+        rig.velocity=direction*vmag;
     }
 
     public void SetMoveSpeed(float movespdn){
@@ -78,5 +83,17 @@ public class MonsterBody : NVComponent
 
     public void AddLegForce(MonsterLeg leg){
         rig.AddForce(leg.legforce*movespd*tform.forward);
+    }
+
+
+    public MonsterPart GetBestAttack(){
+        MonsterPart best = null;
+        foreach(MonsterPart mp in GetComponentsInChildren<MonsterPart>()){
+            if(mp.hasAttack){
+                if(best == null || mp.damage > best.damage)
+                    best = mp;
+            }
+        }
+        return best;
     }
 }

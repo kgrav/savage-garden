@@ -18,9 +18,9 @@ public class MonsterAppetite {
     }}
 
     public float criticality {get{
-        return pctValue < lowPercent ? Mathf.Abs(lowPercent-pctValue) : 0;
+        return pctValue < 0 ? Mathf.Abs(pctValue) : 0;
     }}
-
+    public float deficit {get{return highPercent - Mathf.Max(pctValue,0f);}}
     public bool low {
         get{
             return pctValue <= lowPercent;

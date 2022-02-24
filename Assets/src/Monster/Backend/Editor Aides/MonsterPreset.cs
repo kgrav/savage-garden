@@ -10,6 +10,7 @@ public class MonsterPreset : ScriptableObject {
     public AppetiteConfig boredom;
 
     public AppetiteConfig hunger;
+    public AppetiteConfig stamina;
 
-    public string name;
+    public string monsterName;
 }

@@ -5,6 +5,10 @@ public class MonsterPart : NVComponent{
     protected MonsterBody parent;
     public Animator anim=>GetComponent<Animator>();
 
+    public float attackTime;
+    public float damage;
+    public bool hasAttack;
+
     void Awake(){
         if(anim){
             foreach(NVAnimationState a in anim.GetBehaviours<NVAnimationState>()){
@@ -12,6 +16,11 @@ public class MonsterPart : NVComponent{
             }
         }
         Init();
+    }
+
+    public virtual void TriggerAttack(){
+        anim.SetTrigger("Attack");
+
     }
 
     public void CallAnimationMethod(string method){

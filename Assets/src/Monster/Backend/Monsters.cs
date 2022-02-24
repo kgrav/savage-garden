@@ -31,7 +31,7 @@ public class Monsters : MonoBehaviour
         return monsterList[indx];
     }
 
-    public static void DeleteMonster(int i){
+    public static void DestroyMonster(int i){
 
     }
 
@@ -40,7 +40,7 @@ public class Monsters : MonoBehaviour
     }
 
     
-    public static float actionUpdateInterval {get{return 1/monsters.actionUpdatesPerSecond;}}
+    
     
     public static Vector3 GetWanderPoint(){
         return monsters.wanderCenter + new Vector3((UnityEngine.Random.Range(0,monsters.wanderSize.x*2) - monsters.wanderSize.x),
@@ -49,7 +49,7 @@ public class Monsters : MonoBehaviour
     }
 
     
-    public static float QualityScale;
+    public static float QualityScale {get{return Monsters.monsters.qualityScale;}}
     static MAction BuildHungerAction(Monster m){
         return null;
     }
@@ -65,9 +65,10 @@ public class Monsters : MonoBehaviour
         }
     }
 
+public int criticalityDeathThreshold;
 
-    public float qualityScale;
-    public float actionUpdatesPerSecond;
+public float PriorityDecay;
+public float qualityScale;
 
     public MonsterPreset[] presets;
 
@@ -80,6 +81,7 @@ public class Monsters : MonoBehaviour
 
     void Update(){
             foreach(Monster m in monsterList){
+                if(m.state!=MONSTATE.DEAD)
                 m.Update();
             }
     }

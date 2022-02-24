@@ -15,6 +15,7 @@ MonoBehaviour:
   affinity:
     sloth: 10
     gluttony: 5
+    pride: 16
     wrath: 0
   bodyPreset: {fileID: 7704500299173628235, guid: ca5caaaa93759214e9499de0a2649e54, type: 3}
   boredom:
@@ -30,4 +31,12 @@ MonoBehaviour:
     highPercent: 0.8
     value: 0.5
     max: 1
+    decreaseRate: 0.02
+  stamina:
+    movKey: 2
+    lowPercent: 0.2
+    highPercent: 0.9
+    value: 1
+    max: 1
     decreaseRate: 0.001
+  monsterName: 
