@@ -12,7 +12,7 @@ public class AttackHitbox : NVComponent{
     Dictionary<int, Collider> ignoreList;
 
     public Vector3 impulse;
-    int index=>tform.root.GetComponent<MonsterBody>().monsterPoint.mpindex;
+    int index=>tform.root.GetComponent<MonsterBody>().monsterPoint.mindex;
     void Awake(){
         ignoreList = new Dictionary<int, Collider>();
 
