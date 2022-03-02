@@ -142,14 +142,18 @@ public class MonsterPoint : NVComponent {
         }
     }
 
-    public void Disengage(Monster m){
+    public void Disengage(Monster m,MONAPP reason){
         if(occupants.Contains(m.index))
             occupants.Remove(m.index);
-        OnDisengage(m);
+        OnDisengage(m, reason);
     }
 
     
-    protected virtual void OnDisengage(Monster m){}
+    protected virtual void OnDisengage(Monster m, MONAPP reason){
+        if(reason == MONAPP.LONELY && !m.female){
+            MonsterEgg.MakeEgg(m,Monsters.GetMonster(mindex));
+        }
+    }
 
     [Serializable]
     public class MPResource{

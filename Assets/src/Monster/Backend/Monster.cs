@@ -2,11 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-public enum MONAPP{NONE=-1,BOREDOM=0,HUNGER=1,STAMINA=2,LONELY=3,HORNY=4}
+public enum MONAPP{NONE=-1,BOREDOM=0,HUNGER=1,STAMINA=2,LONELY=3,SURVIVAL=4}
 public enum MONSTATE{NONE=0,ACTION=1,DEAD=2}
 public class Monster {
 
-    
 
     MAction BuildAction(Monster m, List<int> orderedAppetites){
         MAction r = null;
@@ -23,11 +22,23 @@ public class Monster {
                 case MONAPP.HUNGER:
                     r = BuildHungerAction();
                 break;
+                case MONAPP.STAMINA:
+                    r = BuildSleepAction();
+                break;
+                case MONAPP.LONELY:
+                    r = BuildLonelyAction();
+                break;
             }
         }
         return r==null ? BuildWanderAction() : r;
     }
 
+    MAction BuildSleepAction(){
+        MonsterPoint mp = Monsters.CreateBedPoint(Monsters.GetWanderPoint(body.tform.position, 25)).GetComponent<MonsterPoint>();
+        MAction r = new GotoMPAction(this,MONAPP.STAMINA,mp,0);
+        r.AddToEnd(new MPAccessAction(this,mp,MONAPP.STAMINA,0));
+        return r;
+    }
     MAction BuildBoredomAction(){
         return BuildWanderAction();
     }
@@ -36,31 +47,36 @@ public class Monster {
         Vector3 wanderpt = Monsters.GetWanderPoint();
         return new ApproachAction(this, MONAPP.BOREDOM,wanderpt,100);
     }
-
     MAction BuildHungerAction(){
         MAction r = null;
         mpvec bestPoint = GetBestMonsterPoint(MONAPP.HUNGER);
         if(bestPoint.pt!=null){
-            r = new GotoMPAction(this,MONAPP.HUNGER,bestPoint.pt,bestPoint.prefDist);
             if(bestPoint.pt.state == MONSTATE.DEAD){
-                
-                r.AddToEnd(new MPAccessAction(this, bestPoint.pt, MONAPP.HUNGER,bestPoint.prefDist));
+                r = BuildMPAccessAction(bestPoint.pt,MONAPP.HUNGER,appetites[(int)MONAPP.HUNGER].priority);
             }
             else
             {
                 MonsterPart attackpart = body.GetBestAttack();
-                if(body.actionMsg)
-                    Monsters.print(index + ": " + "attacking with" + attackpart);
                 if(attackpart){
-                    r.AddToEnd(new AttackAction(bestPoint.pt, attackpart,bestPoint.prefDist,MONAPP.HUNGER, this));
+                    r = attackpart.BuildAttackAction(bestPoint.pt,this,MONAPP.HUNGER,bestPoint.prefDist);
                 }
             }
         }
         return r;
     }
 
+    MAction BuildLonelyAction(){
+        return null;
+    }
 
 
+
+
+    MAction BuildMPAccessAction(MonsterPoint mp, MONAPP ap, float priority){
+        MAction r = new GotoMPAction(this,ap,mp,priority);
+        r.AddToEnd(new MPAccessAction(this,mp,ap,priority));
+        return r;
+    }
 
     mpvec GetBestMonsterPoint(MONAPP goal){
         mpvec best = new mpvec(null,float.MaxValue);
@@ -72,6 +88,7 @@ public class Monster {
                 if(body.actionMsg)
                 Monsters.print(index + ": " + mp.mindex + " quality: " + quality + " threshold: " + (qualityThreshold + appetites[(int)goal].criticality));
                 if(quality < qualityThreshold + appetites[(int)goal].criticality){
+                quality += Affinity.AffinityDist(affinity,mp.affinity);
                 float qdist = mp.apps[goal].quality*Monsters.QualityScale;
                 float prefDist = Vector2.Distance(Vector2.zero, new Vector2(pdistance,qdist));
                 if(best.pt==null || prefDist < best.prefDist)
@@ -100,6 +117,20 @@ public class Monster {
         r+= mp.getHP;
         return r;
     }
+    float GetLonelinessQuality(MonsterPoint mp){
+        float r = mp.mindex > -1 && Monsters.GetMonster(mp.mindex).female != female ? 0 : 100;
+        return r+Affinity.AffinityDist(affinity,mp.affinity);
+    }
+
+    public void InitSex(MonsterPoint src){
+        action.EndAction();
+        action = new MPAccessAction(this,src,MONAPP.LONELY,0);
+    }
+
+    public void BreakAction(){
+        action.EndAction();
+        action=null;
+    }
 
     class mpvec{
         public MonsterPoint pt;
@@ -126,6 +157,8 @@ public class Monster {
         r.Add(new AffinityData("S",affinity.sloth/20, Color.cyan));
         r.Add(new AffinityData("G",affinity.gluttony/20,Color.green));
         r.Add(new AffinityData("W",affinity.wrath/20, Color.red));
+        r.Add(new AffinityData("P",affinity.pride/20, Color.yellow));
+        r.Add(new AffinityData("L",affinity.lust/20,Color.magenta));
         return r;
     }
 
@@ -145,6 +178,7 @@ public class Monster {
     public MONSTATE state {get;private set;}
 
     float rtime;
+    public bool female;
     public void SetCallback(MonsterPoint monsterPoint){
         callback=monsterPoint;
     }
@@ -154,25 +188,33 @@ public class Monster {
 
     public Monster(MonsterPreset preset, int index){
         this.index=index;
-        affinity = preset.affinity;
+        affinity = preset.affinity.Randomize();
         appetites = new MonsterAppetite[3];
-        appetites[(int)MONAPP.BOREDOM] = new MonsterAppetite(preset.boredom, 20-preset.affinity.sloth);
-        appetites[(int)MONAPP.HUNGER] = new MonsterAppetite(preset.hunger,20-preset.affinity.gluttony);
-        appetites[(int)MONAPP.STAMINA] = new MonsterAppetite(preset.stamina,20);
+        female = Monsters.rbool;
+        appetites[(int)MONAPP.BOREDOM] = new MonsterAppetite(preset.boredom, 20-affinity.sloth);
+        appetites[(int)MONAPP.HUNGER] = new MonsterAppetite(preset.hunger,20-affinity.gluttony);
+        appetites[(int)MONAPP.STAMINA] = new MonsterAppetite(preset.stamina,0);
+        appetites[(int)MONAPP.LONELY] = new MonsterAppetite(preset.loneliness,20-affinity.lust);
+        appetites[(int)MONAPP.SURVIVAL] = new MonsterAppetite(preset.survival,20-affinity.pride);
         body=GameObject.Instantiate(preset.bodyPreset, Monsters.GetWanderPoint(), Quaternion.identity).GetComponent<MonsterBody>();
         body.Setup(this);
         rtime=0.1f;
         appetitesView=new List<MonsterAppetite>();
     }
-
+    public void FlipMonster(bool flipped){
+        if(flipped)
+        body.tform.LookAt(Vector3.up,body.tform.forward);
+        else
+        body.tform.LookAt(Vector3.forward,Vector3.up);
+    }
     public void KillMonster(string reason){
+        FlipMonster(true);
         Monsters.print(index + " is kill. " + reason);
         if(action!=null){
             action.EndAction();
             action=null;
         }
         state=MONSTATE.DEAD;
-        body.tform.LookAt(Vector3.up,body.tform.forward);
     }
     
 
@@ -250,7 +292,9 @@ public class Monster {
     public void SetDecreasePause(MONAPP appetite, bool pause){
         appetites[(int)appetite].pause=pause;
     }
-
+    public void Heal(){
+        body.GetComponent<MPDamageBody>().SleepHeal();
+    }
     //to-do: motive evaluation function
     void rstep(){
             List<int> motivesView = orderMotives();

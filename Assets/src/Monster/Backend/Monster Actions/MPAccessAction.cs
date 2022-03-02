@@ -19,7 +19,7 @@ public class MPAccessAction : MAction {
     {
         self.SetDecreasePause(reason,false);
         if(goalPoint)
-        goalPoint.Disengage(self);
+        goalPoint.Disengage(self, reason);
     }
 
     public override bool EndCondition()

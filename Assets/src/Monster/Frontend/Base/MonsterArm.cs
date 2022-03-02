@@ -10,6 +10,13 @@ public class MonsterArm : MonsterPart {
         anim.SetTrigger("Attack");
     }
 
+    public override MAction BuildAttackAction(MonsterPoint target, Monster self, MONAPP reason, float priority)
+    {
+           MAction r = new GotoMPAction(self,reason,target,priority);
+           r.AddToEnd(new AttackAction(target,this,priority,reason,self));
+           return r;
+    }
+
     void ActivateHitbox(){
         hb.SetActive(true);
     } 

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class UniversalAreaSense : MonsterSense {
 
     List<MonsterPoint> mpoints;
-    
+    public float attentionSpan;
     void Start(){
         mpoints = new List<MonsterPoint>();
     }
@@ -30,4 +30,5 @@ public class UniversalAreaSense : MonsterSense {
             
         }
     }
+
 }
