@@ -132,12 +132,12 @@ MonoBehaviour:
     quality: 0
     accessRate: 0.1
     finite: 1
-    totalAmount: 0.5
+    totalAmount: 4
     onAccess:
     - {fileID: 11400000, guid: 69010cf92c9864349abf861e39f303bf, type: 2}
     onDeplete:
     - {fileID: 11400000, guid: 8d1317d3e6aa37d438db2e0e2b85a1e4, type: 2}
-  affinity:
+  affinityConfig:
     sloth: 0
     gluttony: 0
     pride: 0
